@@ -22,26 +22,55 @@
 ###
 
 {assert, expect} = require 'chai'
-magneto = require 'magneto'
+async = require 'async'
+util = require './util'
 
 describe 'ddb', ->
 
-  before =>
-    port = 4567
-    magneto.listen port, (err) =>
-      spec = {endpoint: "http://localhost:#{port}"}
-      {@objToDDB, @scToDDB, @objFromDDB, @arrFromDDB} = require('../lib/ddb').ddb(spec)
-      @complexJsObj =
-        str: 'string'
-        strSet: ['foo', 'bar']
-        num: 1234
-        numSet: [1234, 5678]
-      @complexDdbObj =
-        str: {'S': 'string'}
-        strSet: {SS: ['foo', 'bar']}
-        num: {N: '1234'}
-        numSet: {'NS': ['1234', '5678']}
-      return
+  before (done) =>
+    @complexJsObj =
+      str: 'string'
+      strSet: ['foo', 'bar']
+      num: 1234
+      numSet: [1234, 5678]
+    @complexDdbObj =
+      str: {'S': 'string'}
+      strSet: {SS: ['foo', 'bar']}
+      num: {N: '1234'}
+      numSet: {'NS': ['1234', '5678']}
+    util.before done, =>
+      {@shouldThrow, @shouldNotThrow} = util
+      {@scToDDB, @objToDDB, @objFromDDB, @arrFromDDB} = util.ddb
+
+  after util.after
+
+  describe '.scToDDB()', =>
+
+    it 'should convert scalar JS values to scalar DDB objects', =>
+      assert.deepEqual {S: 'str'}, @scToDDB('str')
+      assert.deepEqual {N: '1234'}, @scToDDB(1234)
+      assert.deepEqual {SS: ['a', 'b']}, @scToDDB(['a', 'b'])
+      assert.deepEqual {NS: ['1', '2', '3']}, @scToDDB([1, 2, 3])
+      assert.deepEqual {NS: []}, @scToDDB([])
+
+    it 'should not throw when converting valid type scalar JS values to DDB objects', (done) =>
+      async.parallel [
+        @shouldNotThrow => @scToDDB 'str'
+        @shouldNotThrow => @scToDDB 1234
+        @shouldNotThrow => @scToDDB ['a', 'b']
+        @shouldNotThrow => @scToDDB [1, 2, 3]
+        @shouldNotThrow => @scToDDB []
+      ], done
+
+    it 'should throw when converting invalid type scalar JS values to DDB objects', (done) =>
+      # JS type reference: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/typeof
+      async.parallel [
+        @shouldThrow => @scToDDB true
+        @shouldThrow => @scToDDB false
+        @shouldThrow => @scToDDB undefined
+        @shouldThrow => @scToDDB {}
+        @shouldThrow => @scToDDB ->
+      ], done
 
   describe '.objToDDB()', =>
 
@@ -67,17 +96,22 @@ describe 'ddb', ->
       assert.deepEqual {'key1': {'S': 'str'}}, @objToDDB({key1: 'str', key: null})
       assert.deepEqual {'key1': {'N': '1234'}}, @objToDDB({key1: 1234, key: null})
 
-    it 'should throw when converting JS objects with invalid type fields to DDB objects', =>
-      # JS type reference: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/typeof
-      try
-        @objToDDB {key: true}
-        @objToDDB {key: false}
-        @objToDDB {key: undefined}
-        @objToDDB {key: {}}
-        @objToDDB {key: ->}
-      catch e
-        return
-      assert false, 'did not throw'
+    it 'should not throw when converting JS objects with valid type fields to DDB objects', (done) =>
+      async.parallel [
+        @shouldNotThrow => @objToDDB {key: 'a'}
+        @shouldNotThrow => @objToDDB {key: 1}
+        @shouldNotThrow => @objToDDB {key: ['a', 'b']}
+        @shouldNotThrow => @objToDDB {key: [1, 2, 3]}
+      ], done
+
+    it 'should throw when converting JS objects with invalid type fields to DDB objects', (done) =>
+      async.parallel [
+        @shouldThrow => @objToDDB {key: true}
+        @shouldThrow => @objToDDB {key: false}
+        @shouldThrow => @objToDDB {key: undefined}
+        @shouldThrow => @objToDDB {key: {}}
+        @shouldThrow => @objToDDB {key: ->}
+      ], done
 
   describe '.objFromDDB()', =>
 
@@ -97,3 +131,54 @@ describe 'ddb', ->
 
     it 'should convert complex DDB objects to corresponding complex JS objects', =>
       assert.deepEqual @complexJsObj, @objFromDDB(@complexDdbObj)
+
+    it 'should not throw when converting DDB objects with valid type fields to JS objects', (done) =>
+      async.parallel [
+        @shouldNotThrow => @objFromDDB {key: {'N': '1'}}
+        @shouldNotThrow => @objFromDDB {key: {'N': 1}}
+        @shouldNotThrow => @objFromDDB {key: {'S': 'a'}}
+        @shouldNotThrow => @objFromDDB {key: {'S': 1}}
+        @shouldNotThrow => @objFromDDB {key: {'NS': ['a', 'a']}}
+        @shouldNotThrow => @objFromDDB {key: {'SS': [1, 2, 3]}}
+      ], done
+
+    it 'should throw when converting DDB objects with invalid type fields to JS objects', (done) =>
+      async.parallel [
+        @shouldThrow => @objFromDDB {key: {'BAD': 'a'}}
+        @shouldThrow => @objFromDDB {key: {'BAD': '1'}}
+        @shouldThrow => @objFromDDB {key: {'BAD': ['a', 'b']}}
+        @shouldThrow => @objFromDDB {key: {'BAD': [1, 2, 3]}}
+        @shouldThrow => @objFromDDB {key: {'': 'str'}}
+        @shouldThrow => @objFromDDB {key: {'': 1}}
+      ], done
+
+  describe '.arrFromDDB()', =>
+
+    it 'should convert arrays of DDB objects into arrays of JS objects', =>
+      @jsArr = [
+        {str: 'a'}
+        {num: 1}
+        {strArr: ['a', 'b']}
+        {numArr: [1, 2, 3]}
+      ]
+      @ddbArr = [
+        {str: {S: 'a'}}
+        {num: {N: '1'}}
+        {strArr: {SS: ['a', 'b']}}
+        {numArr: {NS: ['1', '2', '3']}}
+      ]
+      assert.deepEqual @jsArr, @arrFromDDB(@ddbArr)
+
+    it 'should replace elements of DDB object arrays with JS objects', =>
+      assert.deepEqual @jsArr, @ddbArr
+
+    it 'should not throw when converting arrays of DDB objects into arrays of JS objects', (done) =>
+      @ddbArr = [
+        {str: {S: 'a'}}
+        {num: {N: '1'}}
+        {strArr: {SS: ['a', 'b']}}
+        {numArr: {NS: ['1', '2', '3']}}
+      ]
+      async.parallel [
+        @shouldNotThrow => @arrFromDDB @ddbArr
+      ], done

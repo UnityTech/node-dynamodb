@@ -11,6 +11,7 @@ task 'test', 'Run test suite', ->
     '--colors'
     '--bail'
     'test/conversion.coffee'
+    'test/table.coffee'
   ]
   test.stdout.pipe process.stdout
   test.stderr.pipe process.stderr
