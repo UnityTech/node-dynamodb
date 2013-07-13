@@ -15,3 +15,15 @@ task 'test', 'Run test suite', ->
   ]
   test.stdout.pipe process.stdout
   test.stderr.pipe process.stderr
+
+task 'test-xunit', 'Run test suite', ->
+  test = spawn "#{binPath}/mocha", [
+    '--compilers', 'coffee:coffee-script'
+    '--reporter', 'xunit'
+    '--colors'
+    '--bail'
+    'test/conversion.coffee'
+    'test/table.coffee'
+  ]
+  test.stdout.pipe process.stdout
+  test.stderr.pipe process.stderr
