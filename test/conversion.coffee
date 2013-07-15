@@ -28,19 +28,19 @@ util = require './util'
 describe 'ddb', ->
 
   before (done) =>
-    @complexJsObj =
-      str: 'string'
-      strSet: ['foo', 'bar']
-      num: 1234
-      numSet: [1234, 5678]
-    @complexDdbObj =
-      str: {'S': 'string'}
-      strSet: {SS: ['foo', 'bar']}
-      num: {N: '1234'}
-      numSet: {'NS': ['1234', '5678']}
     util.before done, =>
       {@shouldThrow, @shouldNotThrow} = util
       {@scToDDB, @objToDDB, @objFromDDB, @arrFromDDB} = util.ddb
+      @complexJsObj =
+        str: 'string'
+        strSet: ['foo', 'bar']
+        num: 1234
+        numSet: [1234, 5678]
+      @complexDdbObj =
+        str: {'S': 'string'}
+        strSet: {SS: ['foo', 'bar']}
+        num: {N: '1234'}
+        numSet: {'NS': ['1234', '5678']}
 
   after util.after
 

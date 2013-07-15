@@ -30,17 +30,29 @@ describe 'ddb', ->
   before (done) =>
     util.before done, =>
       {@shouldThrow, @shouldNotThrow} = util
-      {@createTable, @deleteTable, @describeTable, @updateTable, @listTables} = util.ddb
+      {@schemaTypes, @createTable, @deleteTable, @describeTable, @updateTable, @listTables} = util.ddb
+      @table1Name = 'users'
+      @table2Name = 'posts'
+      @table1Keys = {hash: ['user_id', @schemaTypes().string], range: ['time', @schemaTypes().number]}
+      @table2Keys = {hash: ['post_id', @schemaTypes().string], range: ['text', @schemaTypes().string]}
+      @provisionedThroughput = {read: 5, write: 5}
 
   after util.after
 
-  describe '.listTables()', =>
-
-    it 'should not list any tables when no tables have been created'
-
   describe '.createTable()', =>
 
-    it 'should'
+    it.skip 'should create table if table does not exist', (done) =>
+      async.series [
+        (cb) => @listTables {}, cb
+        (cb) => @createTable @table1Name, @table1Keys, @provisionedThroughput, cb
+      ], done
+
+  describe '.listTables()', =>
+
+    it.skip 'should not list any tables when no tables exist', (done) =>
+      @listTables {}, (err, res) =>
+        console.log res
+        done err, res
 
   describe '.deleteTable()', =>
 
