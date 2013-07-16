@@ -12,6 +12,8 @@ task 'test', 'Run test suite', ->
     '--bail'
     'test/conversion.coffee'
     'test/table.coffee'
+    'test/item.coffee'
+    'test/batch.coffee'
   ]
   test.stdout.pipe process.stdout
   test.stderr.pipe process.stderr
@@ -24,6 +26,8 @@ task 'test-xunit', 'Run test suite', ->
     '--bail'
     'test/conversion.coffee'
     'test/table.coffee'
+    'test/item.coffee'
+    'test/batch.coffee'
   ]
   test.stdout.pipe process.stdout
   test.stderr.pipe process.stderr

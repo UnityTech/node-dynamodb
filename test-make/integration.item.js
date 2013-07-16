@@ -19,18 +19,14 @@
 // OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 // USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+var fwk = require('fwk');
 var assert = require('assert');
-var magneto = require('magneto');
-var aws = require('aws-sdk');
 
-var spec = {
-  accessKeyId: '',
-  secretAccessKey: '',
-  region: 'us-east-1',
-  endpoint: 'http://localhost:4567'
-};
+// cfg
+var cfg = fwk.populateConfig(require("./config.js").config);
 
-var ddb = require('../lib/ddb').ddb(spec, aws);
+var ddb = require('../lib/ddb').ddb({accessKeyId: cfg['DYNAMODB_ACCESSKEYID'], 
+                                     secretAccessKey: cfg['DYNAMODB_SECRETACCESSKEY']});
 
 var item = { date: (new Date).getTime(),
              sha: '3d2d696',

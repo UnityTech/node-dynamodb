@@ -1,11 +1,11 @@
 unit:
-	node test/unit.toDDB.js
+	node test-make/unit.toDDB.js
 
 integration:
-	node test/integration.item.js
+	node test-make/integration.item.js
 
 batch:
-	node test/batch.js
+	node test-make/batch.js
 
 test: unit integration batch
 
