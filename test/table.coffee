@@ -25,43 +25,185 @@
 async = require 'async'
 util = require './util'
 
-describe 'ddb', ->
+describe 'ddb table API', ->
 
   before (done) =>
     util.before done, =>
-      {@shouldThrow, @shouldNotThrow} = util
-      {@schemaTypes, @createTable, @deleteTable, @describeTable, @updateTable, @listTables} = util.ddb
+      {@ddb, @tryCatch, @tryCatchDone, @didThrow, @didNotThrow, @didError, @didNotError} = util
+      {@listTables, @createTable, @deleteTable, @describeTable, @updateTable} = util.ddb
       @table1Name = 'users'
       @table2Name = 'posts'
-      @table1Keys = {hash: ['user_id', @schemaTypes().string], range: ['time', @schemaTypes().number]}
-      @table2Keys = {hash: ['post_id', @schemaTypes().string], range: ['text', @schemaTypes().string]}
+      @table1Keys = {hash: ['user_id', @ddb.schemaTypes().string], range: ['time', @ddb.schemaTypes().number]}
+      @table2Keys = {hash: ['post_id', @ddb.schemaTypes().string], range: ['text', @ddb.schemaTypes().string]}
       @provisionedThroughput = {read: 5, write: 5}
 
   after util.after
 
-  describe '.createTable()', =>
+  it 'should have .listTables() method', =>
+    expect(@ddb).to.respondTo 'listTables'
 
-    it.skip 'should create table if table does not exist', (done) =>
-      async.series [
-        (cb) => @listTables {}, cb
-        (cb) => @createTable @table1Name, @table1Keys, @provisionedThroughput, cb
-      ], done
+  it 'should have .createTable() method', =>
+    expect(@ddb).to.respondTo 'createTable'
+
+  it 'should have .deleteTable() method', =>
+    expect(@ddb).to.respondTo 'deleteTable'
+
+  it 'should have .describeTable() method', =>
+    expect(@ddb).to.respondTo 'describeTable'
+
+  it 'should have .updateTable() method', =>
+    expect(@ddb).to.respondTo 'updateTable'
 
   describe '.listTables()', =>
 
-    it.skip 'should not list any tables when no tables exist', (done) =>
-      @listTables {}, (err, res) =>
-        console.log res
-        done err, res
+    it 'should not throw', (done) =>
+      async.series [
+        (cb) => @didNotThrow cb, =>
+          @listTables {}, cb
+      ], done
 
-  describe '.deleteTable()', =>
+    it 'should not list any tables when no tables exist', (done) =>
+      async.waterfall [
+        (cb) => @tryCatch cb, =>
+          @listTables {}, cb
 
-    it 'should'
+        (tables, cb) => @tryCatchDone cb, =>
+          assert.isArray tables, 'should return array of table names'
+          assert.equal tables.length, 0, 'should return empty array of table names'
+      ], done
+
+  describe '.createTable()', =>
+
+    it 'should not throw', (done) =>
+      async.series [
+        (cb) => @didNotThrow cb, =>
+          @createTable @table2Name, @table2Keys, @provisionedThroughput, cb
+
+        (cb) => @tryCatch cb, =>
+          @deleteTable @table2Name, cb
+      ], done
+
+    it 'should create table if table does not exist', (done) =>
+      async.waterfall [
+        (cb) => @tryCatch cb, =>
+          @createTable @table1Name, @table1Keys, @provisionedThroughput, cb
+
+        (table, cb) => @tryCatchDone cb, =>
+          expect(table).to.contain.keys 'TableName', 'KeySchema', 'TableStatus'
+          expect(table.TableName).to.equal @table1Name
+          expect(table.TableStatus).to.equal 'ACTIVE'
+
+        (cb) => @tryCatch cb, =>
+          @listTables {}, cb
+
+        (tables, cb) => @tryCatchDone cb, =>
+          assert.isArray tables, 'should return array of table names'
+          assert.equal tables.length, 1, 'should return single table name'
+          assert.equal tables[0], @table1Name
+      ], done
+
+    it 'should fail to create table that already exists', (done) =>
+      async.series [
+        (cb) => @createTable @table1Name, @table1Keys, @provisionedThroughput, @didError(cb)
+      ], done
 
   describe '.describeTable()', =>
 
-    it 'should'
+    it 'should not throw', (done) =>
+      async.series [
+        (cb) => @didNotThrow cb, =>
+          @describeTable @table1Name, cb
+      ], done
+
+    it 'should return information about existing table', (done) =>
+      async.waterfall [
+        (cb) => @tryCatch cb, =>
+          @describeTable @table1Name, cb
+
+        (table, cb) => @tryCatchDone cb, =>
+          expect(table).to.contain.keys 'TableName', 'ProvisionedThroughput', 'TableStatus'
+          expect(table.TableName).to.equal @table1Name
+          expect(table.TableStatus).to.equal 'ACTIVE'
+          expect(table.ProvisionedThroughput.ReadCapacityUnits).to.equal @provisionedThroughput.read
+          expect(table.ProvisionedThroughput.WriteCapacityUnits).to.equal @provisionedThroughput.write
+      ], done
+
+    it 'should fail to describe table that does not exist', (done) =>
+      async.series [
+        (cb) => @describeTable @table2Name, @didError(cb)
+      ], done
 
   describe '.updateTable()', =>
 
-    it 'should'
+    it 'should not throw', (done) =>
+      async.series [
+        (cb) => @didNotThrow cb, =>
+          @updateTable @table1Name, {read: 1, write: 1}, cb
+
+        (cb) => @tryCatch cb, =>
+          @updateTable @table1Name, @provisionedThroughput, cb
+      ], done
+
+    it 'should update provisioned throughput of existing table', (done) =>
+      async.waterfall [
+        (cb) => @tryCatch cb, =>
+          @describeTable @table1Name, cb
+
+        (table, cb) => @tryCatchDone cb, =>
+          expect(table).to.contain.keys 'ProvisionedThroughput'
+          expect(table.ProvisionedThroughput.ReadCapacityUnits).to.equal @provisionedThroughput.read
+          expect(table.ProvisionedThroughput.WriteCapacityUnits).to.equal @provisionedThroughput.write
+
+        (cb) => @tryCatch cb, =>
+          @updateTable @table1Name, {read: 10, write: 10}, cb
+
+        (table, cb) => @tryCatch cb, =>
+          # magneto currently has an issue where updateTable does not return table description
+          # https://github.com/exfm/node-magneto/issues/8
+          @describeTable @table1Name, cb
+
+        (table, cb) => @tryCatchDone cb, =>
+          expect(table).to.contain.keys 'ProvisionedThroughput'
+          expect(table.TableName).to.equal @table1Name
+          expect(table.ProvisionedThroughput.ReadCapacityUnits).to.equal 10
+          expect(table.ProvisionedThroughput.WriteCapacityUnits).to.equal 10
+      ], done
+
+    it 'should fail to update table that does not exist', (done) =>
+      async.series [
+        (cb) => @updateTable @table2Name, @provisionedThroughput, @didError(cb)
+      ], done
+
+  describe '.deleteTable()', =>
+
+    it 'should not throw', (done) =>
+      async.series [
+        (cb) => @tryCatch cb, =>
+          @createTable @table2Name, @table2Keys, @provisionedThroughput, cb
+
+        (cb) => @didNotThrow cb, =>
+          @deleteTable @table2Name, cb
+      ], done
+
+    it 'should delete table if table already exists', (done) =>
+      async.waterfall [
+        (cb) => @tryCatch cb, =>
+          @deleteTable @table1Name, cb
+
+        (table, cb) => @tryCatchDone cb, =>
+          expect(table).to.contain.keys 'TableName', 'KeySchema', 'TableStatus'
+          expect(table.TableName).to.equal @table1Name
+          expect(table.TableStatus).to.equal 'DELETING'
+
+        (cb) => @tryCatch cb, =>
+          @listTables {}, cb
+
+        (tables, cb) => @tryCatchDone cb, =>
+          assert.isArray tables, 'should return array of table names'
+          assert.equal tables.length, 0, 'should return empty array of table names'
+      ], done
+
+    it 'should fail to delete table that does not exist', (done) =>
+      async.series [
+        (cb) => @deleteTable @table1Name, @didError(cb)
+      ], done
