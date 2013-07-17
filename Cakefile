@@ -6,7 +6,7 @@ process.env.PATH = "#{binPath}:#{process.env.PATH}"
 
 task 'test', 'Run test suite', ->
   test = spawn "#{binPath}/mocha", [
-    '--compilers', 'coffee:coffee-script'
+    '--compilers', 'coffeem:coffee-script-mapped'
     '--reporter', 'spec'
     '--colors'
     '--bail'
@@ -20,7 +20,7 @@ task 'test', 'Run test suite', ->
 
 task 'test-xunit', 'Run test suite', ->
   test = spawn "#{binPath}/mocha", [
-    '--compilers', 'coffee:coffee-script'
+    '--compilers', 'coffeem:coffee-script-mapped'
     '--reporter', 'xunit'
     '--colors'
     '--bail'

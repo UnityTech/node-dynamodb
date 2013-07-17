@@ -58,14 +58,14 @@ exports.tryCatchDone = (done, task) =>
   catch e
     done e
 
-exports.didError = (done) =>
+exports.expectError = (done) =>
   return (err, res) =>
     if err
       done()
     else
       done new Error 'did not return error'
 
-exports.didNotError = (done) =>
+exports.expectNoError = (done) =>
   return (err, res) =>
     if err
       done new Error 'did return error'
