@@ -26,3 +26,61 @@ async = require 'async'
 util = require './util'
 
 describe 'ddb item API', ->
+
+  before (done) =>
+    util.before done, =>
+      {@ddb, @tryCatch, @tryCatchDone, @didThrow, @didNotThrow, @expectError, @expectNoError} = util
+      {@createTable, @deleteTable, @getItem, @putItem, @deleteItem, @updateItem} = util.ddb
+      @table1Name = 'users'
+      @table2Name = 'posts'
+      @table1Keys = {hash: ['user_id', @ddb.schemaTypes().string], range: ['time', @ddb.schemaTypes().number]}
+      @table2Keys = {hash: ['post_id', @ddb.schemaTypes().string], range: ['text', @ddb.schemaTypes().string]}
+      @provisionedThroughput = {read: 5, write: 5}
+
+  after util.after
+
+  beforeEach (done) =>
+    @createTable @table1Name, @table1Keys, @provisionedThroughput, done
+
+  afterEach (done) =>
+    @deleteTable @table1Name, done
+
+  it 'should have .query() method', =>
+    expect(@ddb).to.respondTo 'query'
+
+  it 'should have .scan() method', =>
+    expect(@ddb).to.respondTo 'scan'
+
+  it 'should have .batchGetItem() method', =>
+    expect(@ddb).to.respondTo 'batchGetItem'
+
+  it 'should have .batchWriteItem() method', =>
+    expect(@ddb).to.respondTo 'batchWriteItem'
+
+  describe '.query()', =>
+
+    it.skip 'should not throw', (done) =>
+      async.series [
+        #(cb) => @didNotThrow cb, => 
+      ], done
+
+  describe '.scan()', =>
+
+    it.skip 'should not throw', (done) =>
+      async.series [
+        #(cb) => @didNotThrow cb, =>
+      ], done
+
+  describe '.batchGetItem()', =>
+
+    it.skip 'should not throw', (done) =>
+      async.series [
+        #(cb) => @didNotThrow cb, =>
+      ], done
+
+  describe '.batchWriteItem()', =>
+
+    it.skip 'should not throw', (done) =>
+      async.series [
+        #(cb) => @didNotThrow cb, =>
+      ], done

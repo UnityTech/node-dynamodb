@@ -25,6 +25,7 @@
   },
   "devDependencies": {
     "coffee-script": "1.6.x",
+    "coffee-script-mapped": "0.1.x",
     "magneto": "0.3.x",
     "async": "0.2.x",
     "mocha": "*",

@@ -29,7 +29,7 @@ describe 'ddb table API', ->
 
   before (done) =>
     util.before done, =>
-      {@ddb, @tryCatch, @tryCatchDone, @didThrow, @didNotThrow, @didError, @didNotError} = util
+      {@ddb, @tryCatch, @tryCatchDone, @didThrow, @didNotThrow, @expectError, @expectNoError} = util
       {@listTables, @createTable, @deleteTable, @describeTable, @updateTable} = util.ddb
       @table1Name = 'users'
       @table2Name = 'posts'
@@ -104,7 +104,7 @@ describe 'ddb table API', ->
 
     it 'should fail to create table that already exists', (done) =>
       async.series [
-        (cb) => @createTable @table1Name, @table1Keys, @provisionedThroughput, @didError(cb)
+        (cb) => @createTable @table1Name, @table1Keys, @provisionedThroughput, @expectError(cb)
       ], done
 
   describe '.describeTable()', =>
@@ -130,7 +130,7 @@ describe 'ddb table API', ->
 
     it 'should fail to describe table that does not exist', (done) =>
       async.series [
-        (cb) => @describeTable @table2Name, @didError(cb)
+        (cb) => @describeTable @table2Name, @expectError(cb)
       ], done
 
   describe '.updateTable()', =>
@@ -171,7 +171,7 @@ describe 'ddb table API', ->
 
     it 'should fail to update table that does not exist', (done) =>
       async.series [
-        (cb) => @updateTable @table2Name, @provisionedThroughput, @didError(cb)
+        (cb) => @updateTable @table2Name, @provisionedThroughput, @expectError(cb)
       ], done
 
   describe '.deleteTable()', =>
@@ -205,5 +205,5 @@ describe 'ddb table API', ->
 
     it 'should fail to delete table that does not exist', (done) =>
       async.series [
-        (cb) => @deleteTable @table1Name, @didError(cb)
+        (cb) => @deleteTable @table1Name, @expectError(cb)
       ], done

@@ -29,7 +29,7 @@ describe 'ddb item API', ->
 
   before (done) =>
     util.before done, =>
-      {@ddb, @tryCatch, @tryCatchDone, @didThrow, @didNotThrow, @didError, @didNotError} = util
+      {@ddb, @tryCatch, @tryCatchDone, @didThrow, @didNotThrow, @expectError, @expectNoError} = util
       {@createTable, @deleteTable, @getItem, @putItem, @deleteItem, @updateItem} = util.ddb
       @table1Name = 'users'
       @table2Name = 'posts'
